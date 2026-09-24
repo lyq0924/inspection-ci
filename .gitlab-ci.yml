@@ -1,0 +1,46 @@
+# GitLab CI/CD 配置文件
+# 自动运行巡检脚本的流水线
+
+# 定义流水线阶段
+stages:
+  - install      # 安装依赖
+  - inspect      # 执行巡检
+
+# 全局配置
+variables:
+  npm_config_cache: "$CI_PROJECT_DIR/.npm"
+
+# 缓存依赖，加速流水线
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - .npm/
+    - node_modules/
+
+# 阶段1：安装依赖
+install-dependencies:
+  stage: install
+  image: node:18
+  script:
+    - npm install
+    - npx playwright install chromium
+    - npx playwright install-deps chromium
+  artifacts:
+    paths:
+      - node_modules/
+    expire_in: 1 hour
+
+# 阶段2：运行巡检脚本
+run-inspection:
+  stage: inspect
+  image: node:18
+  script:
+    - npm run inspect
+  artifacts:
+    paths:
+      - results/      # 保存巡检结果
+      - output/       # 保存输出文件
+    expire_in: 7 days
+  only:
+    - main            # 只在 main 分支触发
+    - schedules       # 定时任务触发
