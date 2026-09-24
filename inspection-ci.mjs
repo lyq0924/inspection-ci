@@ -41,6 +41,7 @@ const CI_ENV_KEY = process.env.INSPECTION_ENV || '123';
 const CI_SCENARIO_FILES = process.env.SCENARIO_FILES || 'all';
 const CI_PRIORITY = process.env.PRIORITY || '';
 const CI_MODULE = process.env.MODULE || '';
+const CI_SCENARIO_NAME = process.env.SCENARIO_NAME || '';
 const CI_HEADLESS = process.env.HEADLESS !== 'false';
 
 // ==================== 工具函数 ====================
@@ -740,6 +741,10 @@ async function main() {
   if (CI_MODULE) {
     selectedScenarios = selectedScenarios.filter(s => s.module.includes(CI_MODULE));
     console.log(`🔍 按模块 "${CI_MODULE}" 过滤: ${selectedScenarios.length} 个场景`);
+  }
+  if (CI_SCENARIO_NAME) {
+    selectedScenarios = selectedScenarios.filter(s => s.name.includes(CI_SCENARIO_NAME));
+    console.log(`🔍 按场景名称 "${CI_SCENARIO_NAME}" 过滤: ${selectedScenarios.length} 个场景`);
   }
 
   const totalItems = selectedScenarios.length + allTasks.length;

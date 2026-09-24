@@ -35,6 +35,11 @@ on:
         required: false
         default: ''
         type: string
+      scenario_name:
+        description: '指定单个场景名称（留空=全部，如: 角色管理）'
+        required: false
+        default: ''
+        type: string
 
 jobs:
   inspection:
@@ -70,6 +75,7 @@ jobs:
           SCENARIO_FILES: ${{ inputs.scenario_files }}
           PRIORITY: ${{ inputs.priority }}
           MODULE: ${{ inputs.module_filter }}
+          SCENARIO_NAME: ${{ inputs.scenario_name }}
           HEADLESS: 'true'
         run: node inspection-ci.mjs
 
@@ -88,4 +94,6 @@ jobs:
           echo "- **环境**: ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
           echo "- **场景选择**: ${{ inputs.scenario_files }}" >> $GITHUB_STEP_SUMMARY
           echo "- **优先级**: ${{ inputs.priority || '全部' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **模块过滤**: ${{ inputs.module_filter || '全部' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **指定场景**: ${{ inputs.scenario_name || '全部' }}" >> $GITHUB_STEP_SUMMARY
           echo "- **报告**: 请查看 Artifacts 下载" >> $GITHUB_STEP_SUMMARY
