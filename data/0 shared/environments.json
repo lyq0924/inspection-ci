@@ -1,0 +1,19 @@
+{
+  "_comment": "环境配置文件模板 — 请根据实际环境修改",
+  "123": {
+    "name": "123环境",
+    "admin": {
+      "url": "https://10.180.83.123:8008/ssom-fbms",
+      "loginUrl": "https://10.180.83.123:8008/ssom-fbms/white/login"
+    },
+    "token": ""
+  },
+  "124": {
+    "name": "124环境",
+    "admin": {
+      "url": "https://10.180.83.124:8008/ssom-fbms",
+      "loginUrl": "https://10.180.83.124:8008/ssom-fbms/white/login"
+    },
+    "token": ""
+  }
+}

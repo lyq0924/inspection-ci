@@ -1,0 +1,19 @@
+{
+  "name": "inspection-ci",
+  "version": "1.0.0",
+  "description": "平台自动化巡检 — CI/CD 版本",
+  "type": "module",
+  "scripts": {
+    "inspect": "node inspection.mjs",
+    "inspect:task": "node inspection-task.mjs",
+    "inspect:ci": "node inspection-ci.mjs"
+  },
+  "dependencies": {
+    "@midscene/web": "^0.30.0",
+    "playwright": "^1.49.0",
+    "js-yaml": "^4.1.0",
+    "exceljs": "^4.4.0",
+    "docx": "^9.0.0",
+    "dotenv": "^16.4.0"
+  }
+}

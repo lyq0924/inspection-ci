@@ -1,0 +1,9 @@
+node_modules/
+results/
+.cache/
+midscene_run/
+archive/
+.env
+*.log
+coverage/
+dist/

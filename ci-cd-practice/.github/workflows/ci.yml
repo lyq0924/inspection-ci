@@ -1,0 +1,65 @@
+# CI/CD 流水线 - 每次推送代码自动运行
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ========== 第一阶段：构建和测试 ==========
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]  # 在多个 Node 版本上测试
+
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+
+      - name: 🔧 设置 Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: 📦 安装依赖
+        run: npm ci
+
+      - name: 🔍 代码检查
+        run: npm run lint --if-present
+
+      - name: 🧪 运行测试
+        run: npm test
+
+      - name: 📊 上传测试覆盖率
+        if: matrix.node-version == '20.x'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+
+  # ========== 第二阶段：部署（仅在主分支推送时执行）==========
+  deploy:
+    needs: build-and-test  # 依赖测试通过
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+
+      - name: 🚀 模拟部署
+        run: |
+          echo "🎉 部署开始..."
+          echo "✅ 代码已通过所有测试"
+          echo "📦 正在构建生产包..."
+          echo "🚀 正在部署到服务器..."
+          echo "✅ 部署完成！"
+        # 实际项目中，这里可以替换为真实的部署命令，例如：
+        # - ssh user@server 'cd /app && git pull && pm2 restart all'
+        # - aws s3 sync ./dist s3://my-bucket
+        # - docker push my-image:latest

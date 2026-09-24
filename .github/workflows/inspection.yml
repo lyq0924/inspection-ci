@@ -1,0 +1,88 @@
+# 平台自动化巡检 — CI/CD 工作流
+# 触发方式：手动在 GitHub 页面点击运行
+name: 自动化巡检
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: '巡检环境（如 123, 122）'
+        required: true
+        default: '123'
+        type: choice
+        options:
+          - '123'
+          - '122'
+          - '124'
+      scenario_files:
+        description: '场景文件选择（all=全部, 1=第一个, 1,3=指定）'
+        required: false
+        default: 'all'
+        type: string
+      priority:
+        description: '按优先级过滤（留空=全部, P0/P1/P2/P3）'
+        required: false
+        default: ''
+        type: choice
+        options:
+          - ''
+          - 'P0'
+          - 'P1'
+          - 'P2'
+          - 'P3'
+      module_filter:
+        description: '按模块过滤（留空=全部，如: 系统管理）'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  inspection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: 📥 检出代码
+        uses: actions/checkout@v4
+
+      - name: 🔧 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 安装依赖
+        run: npm ci
+
+      - name: 🎭 安装 Playwright 浏览器
+        run: npx playwright install --with-deps chromium
+
+      - name: 🔍 执行自动化巡检
+        env:
+          # Midscene AI 配置
+          MIDSCENE_MODEL: ${{ secrets.MIDSCENE_MODEL }}
+          MIDSCENE_API_KEY: ${{ secrets.MIDSCENE_API_KEY }}
+          # 巡检参数（来自手动输入）
+          INSPECTION_ENV: ${{ inputs.environment }}
+          SCENARIO_FILES: ${{ inputs.scenario_files }}
+          PRIORITY: ${{ inputs.priority }}
+          MODULE: ${{ inputs.module_filter }}
+          HEADLESS: 'true'
+        run: node inspection-ci.mjs
+
+      - name: 📤 上传巡检报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: inspection-report-${{ inputs.environment }}-${{ github.run_number }}
+          path: results/
+          retention-days: 30
+
+      - name: 📊 输出巡检摘要
+        if: always()
+        run: |
+          echo "## 🔍 巡检完成" >> $GITHUB_STEP_SUMMARY
+          echo "- **环境**: ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **场景选择**: ${{ inputs.scenario_files }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **优先级**: ${{ inputs.priority || '全部' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **报告**: 请查看 Artifacts 下载" >> $GITHUB_STEP_SUMMARY

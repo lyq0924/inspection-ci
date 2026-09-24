@@ -1,0 +1,1339 @@
+# ============================================
+# 二级SOC平台管理端 — 全量巡检场景
+# ============================================
+# 基于 二级soc平台-管理端-菜单结构.txt 生成
+# 一级菜单: 态势大屏 / 安全总览 / 安全运营 / 场景化运营 / 作业计划管理 / 安全服务 / 安全管理 / 系统设置
+#
+# 断言类型:
+#   - 页面正常: JS异常=0
+#   - 接口正常: HTTP 4xx/5xx=0
+#   - 控制台正常: console.error=0
+#   - UI正常: AI 视觉检测渲染
+#   - 自定义: 如 "表格有数据"（AI 判断）
+# ============================================
+
+config:
+  page_load_wait: 3000
+  page_load_timeout: 30000
+  network_idle_wait: 5000
+  screenshot_quality: medium
+  record_network: true
+
+prerequisite:
+  name: "导航到管理端"
+  steps:
+    - "打开管理端首页"
+    - "如果页面在登录页，等待用户手动登录完成"
+
+# =============================================
+# 态势大屏（4个场景）— 大屏需双击访问
+# =============================================
+scenarios:
+  - name: "威胁态势大屏"
+    module: "态势大屏"
+    enabled: true
+    priority: P0
+    tags: [核心, 大屏]
+    steps:
+      - "点击顶部导航或左侧菜单的'态势大屏'"
+      - "双击'威胁态势大屏'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常, UI正常]
+
+  - name: "安全运营大屏"
+    module: "态势大屏"
+    enabled: true
+    priority: P0
+    tags: [核心, 大屏]
+    steps:
+      - "双击'安全运营大屏'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常, UI正常]
+
+  - name: "资产运营大屏"
+    module: "态势大屏"
+    enabled: true
+    priority: P0
+    tags: [核心, 大屏]
+    steps:
+      - "双击'资产运营大屏'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常, UI正常]
+
+  - name: "指挥调度大屏"
+    module: "态势大屏"
+    enabled: true
+    priority: P1
+    tags: [大屏]
+    steps:
+      - "双击'指挥调度大屏'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  # ---- 安全总览 ----
+  - name: "安全总览"
+    module: "安全总览"
+    enabled: true
+    priority: P0
+    tags: [核心, 总览]
+    steps:
+      - "点击顶部导航或左侧菜单的'安全总览'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常, UI正常]
+
+  # ---- 安全运营 > 二级SOC管理 ----
+  - name: "SOC指令协同"
+    module: "二级SOC管理"
+    enabled: true
+    priority: P0
+    tags: [核心, SOC]
+    steps:
+      - "点击左侧菜单展开'安全运营'"
+      - "展开'二级SOC管理'"
+      - "点击'SOC指令协同'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "SOC事件上报"
+    module: "二级SOC管理"
+    enabled: true
+    priority: P0
+    tags: [核心, SOC]
+    steps:
+      - "在左侧菜单展开'二级SOC管理'"
+      - "点击'二级SOC管理'下的'SOC事件上报'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "SOC事件研判"
+    module: "二级SOC管理"
+    enabled: true
+    priority: P0
+    tags: [核心, SOC]
+    steps:
+      - "在左侧菜单展开'二级SOC管理'"
+      - "点击'二级SOC管理'下的'SOC事件研判'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  # ---- 安全运营 > 反诈专项治理 ----
+  - name: "反诈工单处置"
+    module: "反诈专项治理"
+    enabled: true
+    priority: P1
+    tags: [反诈]
+    steps:
+      - "展开'反诈专项治理'"
+      - "点击'反诈工单处置'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  # ---- 安全运营 > 外部客户事件 ----
+  - name: "外部客户资产清单"
+    module: "外部客户事件"
+    enabled: true
+    priority: P1
+    tags: [外部]
+    steps:
+      - "展开'外部客户事件'"
+      - "点击'外部客户资产清单'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "事件报告配置"
+    module: "外部客户事件"
+    enabled: true
+    priority: P2
+    tags: [外部]
+    steps:
+      - "点击'事件报告配置'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "事件报告下载"
+    module: "外部客户事件"
+    enabled: true
+    priority: P2
+    tags: [外部]
+    steps:
+      - "点击'事件报告下载'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "接收数据源配置"
+    module: "外部客户事件"
+    enabled: true
+    priority: P2
+    tags: [外部]
+    steps:
+      - "点击'接收数据源配置'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  # ---- 安全运营 > 安全设备管理 ----
+  - name: "巡检工作台"
+    module: "安全设备管理"
+    enabled: true
+    priority: P1
+    tags: [设备]
+    steps:
+      - "展开'安全设备管理'"
+      - "点击'巡检工作台'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "设备列表"
+    module: "安全设备管理"
+    enabled: true
+    priority: P1
+    tags: [设备]
+    steps:
+      - "点击'设备列表'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  # ---- 安全运营 > 指挥调度管理 ----
+  - name: "指挥调度概览"
+    module: "指挥调度管理"
+    enabled: true
+    priority: P0
+    tags: [核心, 调度]
+    steps:
+      - "展开'指挥调度管理'"
+      - "点击'指挥调度概览'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常, UI正常]
+
+  - name: "全量工单指令"
+    module: "指挥调度管理"
+    enabled: true
+    priority: P1
+    tags: [调度]
+    steps:
+      - "点击'全量工单指令'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "指令工单列表"
+    module: "指挥调度管理"
+    enabled: true
+    priority: P2
+    tags: [调度]
+    steps:
+      - "点击'指令工单列表'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "指令工单配置"
+    module: "指挥调度管理"
+    enabled: true
+    priority: P2
+    tags: [调度]
+    steps:
+      - "点击'指令工单配置'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "调度-SOC事件上报"
+    module: "指挥调度管理"
+    enabled: true
+    priority: P1
+    tags: [调度, SOC]
+    steps:
+      - "在左侧菜单展开'指挥调度管理'"
+      - "点击'指挥调度管理'下的'SOC事件上报'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "调度-SOC事件研判"
+    module: "指挥调度管理"
+    enabled: true
+    priority: P1
+    tags: [调度, SOC]
+    steps:
+      - "在左侧菜单展开'指挥调度管理'"
+      - "点击'指挥调度管理'下的'SOC事件研判'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  # ---- 安全运营 > 安全事件管理 ----
+  - name: "安全事件分析概览"
+    module: "安全事件管理"
+    enabled: true
+    priority: P0
+    tags: [核心, 事件]
+    steps:
+      - "展开'安全事件管理'"
+      - "点击'安全事件分析概览'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常, UI正常]
+
+  - name: "安全事件分析"
+    module: "安全事件管理"
+    enabled: true
+    priority: P0
+    tags: [核心, 事件]
+    steps:
+      - "点击'安全事件分析'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "自动处置规则"
+    module: "安全事件管理"
+    enabled: true
+    priority: P2
+    tags: [事件]
+    steps:
+      - "点击'自动处置规则'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "IP封禁"
+    module: "安全事件管理"
+    enabled: true
+    priority: P1
+    tags: [事件]
+    steps:
+      - "展开'封禁IP库'"
+      - "点击'IP封禁'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "IP白名单"
+    module: "安全事件管理"
+    enabled: true
+    priority: P1
+    tags: [事件]
+    steps:
+      - "点击'IP白名单'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "追踪溯源"
+    module: "安全事件管理"
+    enabled: true
+    priority: P2
+    tags: [事件]
+    steps:
+      - "点击'追踪溯源'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  # ---- 安全运营 > 全量资产管理 ----
+  - name: "资产概览"
+    module: "全量资产管理"
+    enabled: true
+    priority: P0
+    tags: [核心, 资产]
+    steps:
+      - "展开'全量资产管理'"
+      - "点击'资产概览'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "资产测绘列表"
+    module: "全量资产管理"
+    enabled: true
+    priority: P1
+    tags: [资产]
+    steps:
+      - "展开'资产测绘'"
+      - "点击'资产测绘列表'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "测绘任务管理"
+    module: "全量资产管理"
+    enabled: true
+    priority: P2
+    tags: [资产]
+    steps:
+      - "点击'任务管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "IP资产管理"
+    module: "全量资产管理"
+    enabled: true
+    priority: P0
+    tags: [核心, 资产]
+    steps:
+      - "展开'资产管理'"
+      - "点击'IP资产管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常, "IP资产列表有数据"]
+
+  - name: "应用系统管理"
+    module: "全量资产管理"
+    enabled: true
+    priority: P0
+    tags: [核心, 资产]
+    steps:
+      - "点击'应用系统管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "资产变动监测"
+    module: "全量资产管理"
+    enabled: true
+    priority: P1
+    tags: [资产]
+    steps:
+      - "展开'资产运营'"
+      - "展开'资产变更管理'"
+      - "点击'资产变动监测'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "端口变动监测"
+    module: "全量资产管理"
+    enabled: true
+    priority: P1
+    tags: [资产]
+    steps:
+      - "点击'端口变动监测'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "物理区域管理"
+    module: "基础信息管理"
+    enabled: true
+    priority: P2
+    tags: [基础]
+    steps:
+      - "展开'基础信息管理'"
+      - "点击'物理区域管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "扫描节点管理"
+    module: "基础信息管理"
+    enabled: true
+    priority: P2
+    tags: [基础]
+    steps:
+      - "点击'扫描节点管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "IP段管理"
+    module: "基础信息管理"
+    enabled: true
+    priority: P2
+    tags: [基础]
+    steps:
+      - "点击'IP段管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "关键词管理"
+    module: "基础信息管理"
+    enabled: true
+    priority: P2
+    tags: [基础]
+    steps:
+      - "点击'关键词管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "标签管理"
+    module: "基础信息管理"
+    enabled: true
+    priority: P2
+    tags: [基础]
+    steps:
+      - "点击'标签管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "ICP备案管理"
+    module: "基础信息管理"
+    enabled: true
+    priority: P3
+    tags: [基础]
+    steps:
+      - "点击'ICP备案管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "域名管理"
+    module: "基础信息管理"
+    enabled: true
+    priority: P3
+    tags: [基础]
+    steps:
+      - "点击'域名管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "机房管理"
+    module: "基础信息管理"
+    enabled: true
+    priority: P3
+    tags: [基础]
+    steps:
+      - "点击'机房管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "资产画像"
+    module: "全量资产管理"
+    enabled: true
+    priority: P1
+    tags: [资产]
+    steps:
+      - "点击'资产画像'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  # ---- 安全运营 > 日常运营管理 ----
+  - name: "值班排班管理"
+    module: "日常运营管理"
+    enabled: true
+    priority: P2
+    tags: [运营]
+    steps:
+      - "展开'日常运营管理'"
+      - "点击'值班排班管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "通知消息列表"
+    module: "日常运营管理"
+    enabled: true
+    priority: P2
+    tags: [运营]
+    steps:
+      - "点击'通知消息列表'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  # ---- 安全运营 > 漏洞运营管理 ----
+  - name: "漏洞概览"
+    module: "漏洞运营管理"
+    enabled: true
+    priority: P0
+    tags: [核心, 漏洞]
+    steps:
+      - "展开'漏洞运营管理'"
+      - "点击'漏洞概览'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "热点漏洞"
+    module: "漏洞运营管理"
+    enabled: true
+    priority: P1
+    tags: [漏洞]
+    steps:
+      - "点击'热点漏洞'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "漏洞管理"
+    module: "漏洞运营管理"
+    enabled: true
+    priority: P1
+    tags: [漏洞]
+    steps:
+      - "点击'漏洞管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "漏洞白名单管理"
+    module: "漏洞运营管理"
+    enabled: true
+    priority: P2
+    tags: [漏洞]
+    steps:
+      - "点击'白名单管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "扫描器配置"
+    module: "漏洞运营管理"
+    enabled: true
+    priority: P2
+    tags: [漏洞]
+    steps:
+      - "点击'扫描器配置'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "扫描任务列表"
+    module: "漏洞运营管理"
+    enabled: true
+    priority: P2
+    tags: [漏洞]
+    steps:
+      - "点击'扫描任务列表'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  # ---- 安全运营 > 安全运营报告 ----
+  - name: "安全运营报告任务"
+    module: "安全运营报告"
+    enabled: true
+    priority: P2
+    tags: [报告]
+    steps:
+      - "展开'安全运营报告'"
+      - "点击'安全运营报告任务'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "安全运营报告列表"
+    module: "安全运营报告"
+    enabled: true
+    priority: P2
+    tags: [报告]
+    steps:
+      - "点击'安全运营报告列表'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "安全运营报告模版"
+    module: "安全运营报告"
+    enabled: true
+    priority: P3
+    tags: [报告]
+    steps:
+      - "点击'安全运营报告模版'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  # ---- 安全运营 > 安全评估管理 ----
+  - name: "指标管理"
+    module: "安全评估管理"
+    enabled: true
+    priority: P2
+    tags: [评估]
+    steps:
+      - "展开'安全评估管理'"
+      - "点击'指标管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "指标模板"
+    module: "安全评估管理"
+    enabled: true
+    priority: P2
+    tags: [评估]
+    steps:
+      - "点击'指标模板'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "评估任务"
+    module: "安全评估管理"
+    enabled: true
+    priority: P2
+    tags: [评估]
+    steps:
+      - "点击'评估任务'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  # ---- 场景化运营（27个场景）----
+  - name: "网站安全-事件上报"
+    module: "场景化运营"
+    enabled: true
+    priority: P1
+    tags: [场景化]
+    steps:
+      - "点击顶部导航或左侧菜单的'场景化运营'"
+      - "展开'网站安全'"
+      - "点击'网站安全事件上报'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "网站安全-事件研判"
+    module: "场景化运营"
+    enabled: true
+    priority: P1
+    tags: [场景化]
+    steps:
+      - "点击'网站安全事件研判'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "网站安全-指令处置"
+    module: "场景化运营"
+    enabled: true
+    priority: P1
+    tags: [场景化]
+    steps:
+      - "点击'网站安全指令处置'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "邮件安全-事件上报"
+    module: "场景化运营"
+    enabled: true
+    priority: P1
+    tags: [场景化]
+    steps:
+      - "展开'邮件安全'"
+      - "点击'邮件安全事件上报'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "邮件安全-事件研判"
+    module: "场景化运营"
+    enabled: true
+    priority: P2
+    tags: [场景化]
+    steps:
+      - "点击'邮件安全事件研判'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "邮件安全-指令处置"
+    module: "场景化运营"
+    enabled: true
+    priority: P2
+    tags: [场景化]
+    steps:
+      - "点击'邮件安全指令处置'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "终端安全-事件分析"
+    module: "场景化运营"
+    enabled: true
+    priority: P1
+    tags: [场景化]
+    steps:
+      - "展开'终端安全'"
+      - "点击'终端安全事件分析'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "终端安全-事件研判"
+    module: "场景化运营"
+    enabled: true
+    priority: P2
+    tags: [场景化]
+    steps:
+      - "点击'终端安全事件研判'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "终端安全-指令处置"
+    module: "场景化运营"
+    enabled: true
+    priority: P2
+    tags: [场景化]
+    steps:
+      - "点击'终端安全指令处置'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "数据安全-事件上报"
+    module: "场景化运营"
+    enabled: true
+    priority: P1
+    tags: [场景化]
+    steps:
+      - "展开'数据安全'"
+      - "点击'数据安全事件上报'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "数据安全-事件研判"
+    module: "场景化运营"
+    enabled: true
+    priority: P2
+    tags: [场景化]
+    steps:
+      - "点击'数据安全事件研判'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "数据安全-指令处置"
+    module: "场景化运营"
+    enabled: true
+    priority: P2
+    tags: [场景化]
+    steps:
+      - "点击'数据安全指令处置'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "主机安全-事件上报"
+    module: "场景化运营"
+    enabled: true
+    priority: P1
+    tags: [场景化]
+    steps:
+      - "展开'主机安全（EDR）'"
+      - "点击'主机安全事件上报'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "主机安全-事件研判"
+    module: "场景化运营"
+    enabled: true
+    priority: P2
+    tags: [场景化]
+    steps:
+      - "点击'主机安全事件研判'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "主机安全-指令处置"
+    module: "场景化运营"
+    enabled: true
+    priority: P2
+    tags: [场景化]
+    steps:
+      - "点击'主机安全指令处置'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "威胁狩猎-事件上报"
+    module: "场景化运营"
+    enabled: true
+    priority: P1
+    tags: [场景化]
+    steps:
+      - "展开'威胁狩猎（蜜罐）'"
+      - "点击'威胁狩猎事件上报'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "威胁狩猎-事件研判"
+    module: "场景化运营"
+    enabled: true
+    priority: P2
+    tags: [场景化]
+    steps:
+      - "点击'威胁狩猎事件研判'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "威胁狩猎-指令处置"
+    module: "场景化运营"
+    enabled: true
+    priority: P2
+    tags: [场景化]
+    steps:
+      - "点击'威胁狩猎指令处置'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "威胁情报-事件上报"
+    module: "场景化运营"
+    enabled: true
+    priority: P1
+    tags: [场景化]
+    steps:
+      - "展开'威胁情报'"
+      - "点击'威胁情报事件上报'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "威胁情报-事件研判"
+    module: "场景化运营"
+    enabled: true
+    priority: P2
+    tags: [场景化]
+    steps:
+      - "点击'威胁情报事件研判'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "威胁情报-指令处置"
+    module: "场景化运营"
+    enabled: true
+    priority: P2
+    tags: [场景化]
+    steps:
+      - "点击'威胁情报指令处置'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "场景化资产管理-事件上报"
+    module: "场景化运营"
+    enabled: true
+    priority: P2
+    tags: [场景化]
+    steps:
+      - "展开'资产管理'"
+      - "点击'资产管理事件上报'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "场景化资产管理-事件研判"
+    module: "场景化运营"
+    enabled: true
+    priority: P2
+    tags: [场景化]
+    steps:
+      - "点击'资产管理事件研判'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "场景化资产管理-指令处置"
+    module: "场景化运营"
+    enabled: true
+    priority: P3
+    tags: [场景化]
+    steps:
+      - "点击'资产管理指令处置'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "场景化漏洞管理-事件上报"
+    module: "场景化运营"
+    enabled: true
+    priority: P2
+    tags: [场景化]
+    steps:
+      - "展开'漏洞管理'"
+      - "点击'漏洞管理事件上报'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "场景化漏洞管理-事件研判"
+    module: "场景化运营"
+    enabled: true
+    priority: P2
+    tags: [场景化]
+    steps:
+      - "点击'漏洞管理事件研判'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "场景化漏洞管理-指令处置"
+    module: "场景化运营"
+    enabled: true
+    priority: P3
+    tags: [场景化]
+    steps:
+      - "点击'漏洞管理指令处置'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  # ---- 作业计划管理 ----
+  - name: "值班表管理"
+    module: "作业计划管理"
+    enabled: true
+    priority: P2
+    tags: [作业]
+    steps:
+      - "点击顶部导航或左侧菜单的'作业计划管理'"
+      - "点击'值班表管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "排班计划管理"
+    module: "作业计划管理"
+    enabled: true
+    priority: P2
+    tags: [作业]
+    steps:
+      - "点击'排班计划管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "进出人员管理台账"
+    module: "作业计划管理"
+    enabled: true
+    priority: P3
+    tags: [作业]
+    steps:
+      - "点击'进出人员管理台账'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  # ---- 安全服务（11个场景）----
+  - name: "重保任务列表"
+    module: "安全服务"
+    enabled: true
+    priority: P1
+    tags: [服务]
+    steps:
+      - "点击顶部导航或左侧菜单的'安全服务'"
+      - "展开'安全重保服务'"
+      - "点击'重保任务列表'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "重保任务模板"
+    module: "安全服务"
+    enabled: true
+    priority: P2
+    tags: [服务]
+    steps:
+      - "点击'重保任务模板'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "渗透测试服务"
+    module: "安全服务"
+    enabled: true
+    priority: P2
+    tags: [服务]
+    steps:
+      - "点击'渗透测试服务'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "上线检测服务"
+    module: "安全服务"
+    enabled: true
+    priority: P2
+    tags: [服务]
+    steps:
+      - "点击'上线检测服务'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "APP安全服务"
+    module: "安全服务"
+    enabled: true
+    priority: P2
+    tags: [服务]
+    steps:
+      - "点击'APP安全服务'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "钓鱼测试服务"
+    module: "安全服务"
+    enabled: true
+    priority: P2
+    tags: [服务]
+    steps:
+      - "点击'钓鱼测试服务'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "安全应急服务"
+    module: "安全服务"
+    enabled: true
+    priority: P1
+    tags: [服务]
+    steps:
+      - "点击'安全应急服务'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "安全演练服务"
+    module: "安全服务"
+    enabled: true
+    priority: P3
+    tags: [服务]
+    steps:
+      - "点击'安全演练服务'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "安全培训服务"
+    module: "安全服务"
+    enabled: true
+    priority: P3
+    tags: [服务]
+    steps:
+      - "点击'安全培训服务'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "安全组件服务"
+    module: "安全服务"
+    enabled: true
+    priority: P2
+    tags: [服务]
+    steps:
+      - "点击'安全组件服务'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "威胁情报服务"
+    module: "安全服务"
+    enabled: true
+    priority: P2
+    tags: [服务]
+    steps:
+      - "点击'威胁情报服务'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  # ---- 安全管理 ----
+  - name: "组织架构管理"
+    module: "安全管理"
+    enabled: true
+    priority: P1
+    tags: [管理]
+    steps:
+      - "点击顶部导航或左侧菜单的'安全管理'"
+      - "点击'组织架构管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "管理单位"
+    module: "安全管理"
+    enabled: true
+    priority: P2
+    tags: [管理]
+    steps:
+      - "展开'安全标准管理'"
+      - "点击'管理单位'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "安全标准"
+    module: "安全管理"
+    enabled: true
+    priority: P2
+    tags: [管理]
+    steps:
+      - "点击'安全标准'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "安全标准展示"
+    module: "安全管理"
+    enabled: true
+    priority: P3
+    tags: [管理]
+    steps:
+      - "点击'安全标准展示'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "安全制度管理"
+    module: "安全管理"
+    enabled: true
+    priority: P2
+    tags: [管理]
+    steps:
+      - "展开'安全制度管理'"
+      - "点击'制度分类'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "材料归档管理"
+    module: "安全管理"
+    enabled: true
+    priority: P3
+    tags: [管理]
+    steps:
+      - "点击'材料归档管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  # ---- 系统设置（20个场景）----
+  - name: "角色管理"
+    module: "系统设置"
+    enabled: true
+    priority: P1
+    tags: [系统]
+    steps:
+      - "点击顶部导航或左侧菜单的'系统设置'"
+      - "点击'角色管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "用户管理"
+    module: "系统设置"
+    enabled: true
+    priority: P1
+    tags: [系统]
+    steps:
+      - "点击'用户管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "菜单管理"
+    module: "系统设置"
+    enabled: true
+    priority: P2
+    tags: [系统]
+    steps:
+      - "点击'菜单管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "字典管理"
+    module: "系统设置"
+    enabled: true
+    priority: P2
+    tags: [系统]
+    steps:
+      - "点击'字典管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "字典树管理"
+    module: "系统设置"
+    enabled: true
+    priority: P3
+    tags: [系统]
+    steps:
+      - "点击'字典树管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "定时任务"
+    module: "系统设置"
+    enabled: true
+    priority: P2
+    tags: [系统]
+    steps:
+      - "点击'定时任务'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "系统监控"
+    module: "系统设置"
+    enabled: true
+    priority: P1
+    tags: [系统]
+    steps:
+      - "点击'系统监控'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "登录日志"
+    module: "系统设置-日志"
+    enabled: true
+    priority: P2
+    tags: [系统, 日志]
+    steps:
+      - "展开'日志管理'"
+      - "点击'登录日志'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "操作日志"
+    module: "系统设置-日志"
+    enabled: true
+    priority: P2
+    tags: [系统, 日志]
+    steps:
+      - "点击'操作日志'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "导入日志"
+    module: "系统设置-日志"
+    enabled: true
+    priority: P3
+    tags: [系统, 日志]
+    steps:
+      - "点击'导入日志'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "清扫日志"
+    module: "系统设置-日志"
+    enabled: true
+    priority: P3
+    tags: [系统, 日志]
+    steps:
+      - "点击'清扫日志'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "短信日志"
+    module: "系统设置-日志"
+    enabled: true
+    priority: P3
+    tags: [系统, 日志]
+    steps:
+      - "点击'短信日志'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "通知日志"
+    module: "系统设置-日志"
+    enabled: true
+    priority: P3
+    tags: [系统, 日志]
+    steps:
+      - "点击'通知日志'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "参数管理"
+    module: "系统设置"
+    enabled: true
+    priority: P3
+    tags: [系统]
+    steps:
+      - "点击'参数管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "通知规则"
+    module: "系统设置-通知"
+    enabled: true
+    priority: P2
+    tags: [系统, 通知]
+    steps:
+      - "展开'通知管理'"
+      - "点击'通知规则'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "通知模板"
+    module: "系统设置-通知"
+    enabled: true
+    priority: P2
+    tags: [系统, 通知]
+    steps:
+      - "点击'通知模板'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "通知配置"
+    module: "系统设置-通知"
+    enabled: true
+    priority: P3
+    tags: [系统, 通知]
+    steps:
+      - "点击'通知配置'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "平台管理"
+    module: "系统设置"
+    enabled: true
+    priority: P2
+    tags: [系统]
+    steps:
+      - "点击'平台管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "证书管理"
+    module: "系统设置"
+    enabled: true
+    priority: P2
+    tags: [系统]
+    steps:
+      - "点击'证书管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "数据配置"
+    module: "系统设置"
+    enabled: true
+    priority: P3
+    tags: [系统]
+    steps:
+      - "点击'数据配置'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
+
+  - name: "Oauth管理"
+    module: "系统设置"
+    enabled: true
+    priority: P3
+    tags: [系统]
+    steps:
+      - "点击'Oauth管理'"
+      - "等待页面加载完成"
+    assertions: [页面正常, 接口正常, 控制台正常]
