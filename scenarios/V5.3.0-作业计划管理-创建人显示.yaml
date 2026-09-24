@@ -21,7 +21,11 @@ tasks:
       - aiInput: 排班名称输入框
         value: "autotest-${DATE}-001"
       - aiTap: 常态化
-      - aiAction: 排班时间开始时间选择当前日期，结束时间选择当前日期对应的周五
+      # 选择排班时间：开始日期选当前日期，结束日期选本周五
+      - aiTap: 开始时间输入框
+      - aiTap: 当前日期
+      - aiTap: 结束时间输入框
+      - aiTap: 本周五的日期
       - aiTap: 提交
       - aiAssert: 页面出现"新增成功"的提示
       # 验证列表字段
