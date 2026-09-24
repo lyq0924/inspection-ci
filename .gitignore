@@ -7,3 +7,9 @@ archive/
 *.log
 coverage/
 dist/
+
+# 输出目录：跟踪结构，忽略生成的报告
+output/latest/*
+output/archive/*
+!output/latest/.gitkeep
+!output/archive/.gitkeep

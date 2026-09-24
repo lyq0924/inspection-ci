@@ -649,7 +649,21 @@ async function main() {
   await generateHtmlReport(results, env.name, selectedFiles);
   await generateMarkdownReport(results, env.name, selectedFiles);
 
+  // 13. 复制报告到 output/latest/
+  const outputDir = path.join(__dirname, 'output', 'latest');
+  if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+  // 清空旧的 latest 报告
+  fs.readdirSync(outputDir).filter(f => f !== '.gitkeep').forEach(f => fs.unlinkSync(path.join(outputDir, f)));
+  // 复制新报告
+  if (fs.existsSync(RESULT_BASE)) {
+    fs.readdirSync(RESULT_BASE).forEach(f => {
+      fs.copyFileSync(path.join(RESULT_BASE, f), path.join(outputDir, f));
+    });
+    console.log(`📂 报告已复制到: ${outputDir}`);
+  }
+
   console.log(`\n📁 结果目录: ${RESULT_BASE}`);
+  console.log(`📁 输出目录: ${outputDir}`);
 
   // CI 模式：直接关闭，不等待用户输入
   await browser.close().catch(() => {});

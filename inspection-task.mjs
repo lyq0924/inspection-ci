@@ -53,8 +53,21 @@ function resolveEnvVar(text) {
   if (typeof text !== 'string') return String(text ?? '');
   // 内置变量
   const now = new Date();
+  const day = now.getDate();
+  const y = now.getFullYear();
+  const m = String(now.getMonth()+1).padStart(2,'0');
+  const d = String(day).padStart(2,'0');
+  // 计算本周五的日期
+  const friday = new Date(now);
+  friday.setDate(day + ((5 - now.getDay() + 7) % 7 || 7));
+  const fd = String(friday.getDate()).padStart(2,'0');
+  const fm = String(friday.getMonth()+1).padStart(2,'0');
   const builtins = {
-    DATE: `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`,
+    DATE: `${y}${m}${d}`,
+    TODAY: `${y}-${m}-${d}`,
+    TODAY_DAY: String(day),
+    FRIDAY: `${y}-${fm}-${fd}`,
+    FRIDAY_DAY: String(friday.getDate()),
     TIMESTAMP: now.toISOString().replace(/[:.]/g, '-'),
     TIME: `${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`,
   };
