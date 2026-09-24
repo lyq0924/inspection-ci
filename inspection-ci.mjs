@@ -96,11 +96,134 @@ function loadMenuTree(selectedFile) {
   return '';
 }
 
-// ==================== YAML 场景加载 ====================
+// ==================== YAML 文件加载 ====================
 function listScenarioFiles() {
   const dir = path.join(__dirname, 'scenarios');
   if (!fs.existsSync(dir)) return [];
   return fs.readdirSync(dir).filter(f => (f.endsWith('.yml') || f.endsWith('.yaml')) && !f.startsWith('~$'));
+}
+
+// 解析环境变量 ${VAR}
+function resolveEnvVar(text) {
+  if (typeof text !== 'string') return String(text ?? '');
+  const now = new Date();
+  const builtins = {
+    DATE: `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`,
+    TIMESTAMP: now.toISOString().replace(/[:.]/g, '-'),
+    TIME: `${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`,
+  };
+  return text.replace(/\$\{([^}]+)\}/g, (_, key) => builtins[key] || process.env[key] || '');
+}
+
+// 自动检测 YAML 格式
+function detectYamlFormat(filePath) {
+  const raw = fs.readFileSync(filePath, 'utf-8');
+  const content = raw.replace(/^\s*#[^\n]*/gm, '');
+  if (/^tasks:/m.test(content) && /^web:/m.test(content)) return 'task';
+  if (/^scenarios:/m.test(content)) return 'scenario';
+  return 'unknown';
+}
+
+// Task YAML 格式加载 (web: + tasks[].flow[])
+function loadTaskYaml(filePath) {
+  const raw = fs.readFileSync(filePath, 'utf-8');
+  const doc = YAML.load(raw);
+  if (!doc || !doc.tasks) return null;
+  const webConfig = doc.web || {};
+  const tasks = (doc.tasks || []).filter(t => t && t.name && t.flow && t.flow.length > 0).map((t, i) => ({
+    id: i + 1,
+    name: t.name || `任务${i + 1}`,
+    flow: t.flow || [],
+  }));
+  return {
+    web: {
+      url: webConfig.url || '',
+      viewportWidth: webConfig.viewportWidth || 1401,
+      viewportHeight: webConfig.viewportHeight || 694,
+      acceptInsecureCerts: webConfig.acceptInsecureCerts !== false,
+    },
+    tasks,
+    file: path.basename(filePath),
+  };
+}
+
+// 执行单个 flow 步骤
+async function executeFlowStep(page, agent, step, stepIdx) {
+  if (!step || typeof step !== 'object') return;
+  if ('aiTap' in step) {
+    const target = resolveEnvVar(String(step.aiTap));
+    console.log(`     步骤${stepIdx}: 点击 [${target}]`);
+    await agent.aiAct(`点击"${target}"`);
+    await wait(1500);
+  } else if ('aiInput' in step) {
+    const target = resolveEnvVar(String(step.aiInput));
+    const value = resolveEnvVar(String(step.value || ''));
+    console.log(`     步骤${stepIdx}: 在 [${target}] 输入 [${value}]`);
+    await agent.aiAct(`在"${target}"中输入"${value}"`);
+    await wait(1000);
+  } else if ('aiAction' in step) {
+    let desc = step.aiAction;
+    if (typeof desc === 'object' && desc !== null) { const vals = Object.values(desc); desc = vals.length > 0 ? String(vals[0]) : ''; }
+    desc = resolveEnvVar(String(desc));
+    console.log(`     步骤${stepIdx}: 执行 [${desc.length > 60 ? desc.substring(0, 60) + '...' : desc}]`);
+    await agent.aiAct(desc);
+    await wait(1500);
+  } else if ('aiAssert' in step) {
+    const assertion = resolveEnvVar(String(step.aiAssert));
+    console.log(`     步骤${stepIdx}: 断言 [${assertion.length > 60 ? assertion.substring(0, 60) + '...' : assertion}]`);
+    await agent.aiAssert(assertion);
+  } else if ('aiWaitFor' in step) {
+    const condition = resolveEnvVar(String(step.aiWaitFor));
+    const timeout = step.timeout || 10000;
+    console.log(`     步骤${stepIdx}: 等待 [${condition.length > 60 ? condition.substring(0, 60) + '...' : condition}] (超时${timeout}ms)`);
+    try { await agent.aiWaitFor(condition, { timeoutMs: timeout }); }
+    catch {
+      const maxRetries = Math.ceil(timeout / 2000); let lastErr;
+      for (let i = 0; i < maxRetries; i++) { try { await agent.aiAssert(condition); break; } catch (e) { lastErr = e; if (i === maxRetries - 1) throw lastErr; } await wait(2000); }
+    }
+  } else if ('sleep' in step) {
+    const ms = parseInt(step.sleep);
+    console.log(`     步骤${stepIdx}: 等待 ${ms}ms`);
+    await wait(ms);
+  }
+}
+
+// 执行 Task YAML 任务
+async function executeTaskFlow(page, task, agent, config, resultDir, idx, total) {
+  const tag = `[${idx}/${total}]`;
+  console.log(`\n${tag} 📋 ${task.name}`);
+  const startTime = Date.now();
+  const shotPrefix = path.join(resultDir, `${String(idx).padStart(2,'0')}-${sanitizeFileName(task.name)}`);
+  await page.screenshot({ path: shotPrefix + '-before.png', fullPage: false }).catch(() => {});
+  const monitor = startErrorMonitor(page);
+  let stepOk = true, stepError = '';
+  for (let si = 0; si < task.flow.length; si++) {
+    const step = task.flow[si]; if (!step) continue;
+    try {
+      await executeFlowStep(page, agent, step, si + 1);
+      if (step.aiTap || step.aiAction) {
+        await page.waitForLoadState('networkidle', { timeout: config.network_idle_wait }).catch(() => {});
+      }
+    } catch (e) {
+      stepOk = false; stepError = `步骤${si + 1}失败: ${e.message?.substring(0, 120)}`;
+      console.log(`     ❌ ${stepError}`); break;
+    }
+  }
+  if (stepOk) { await wait(1500); monitor.snapshot(); }
+  const monitorSnapshot = monitor.snapshot(); monitor.stop();
+  await wait(500);
+  await page.screenshot({ path: shotPrefix + '-after.png', fullPage: false }).catch(() => {});
+  const pageName = await detectPageName(page);
+  const elapsed = Date.now() - startTime;
+  const result = {
+    id: idx, name: task.name, module: 'YAML任务', priority: 'P1', tags: [],
+    pageName, result: stepOk ? '通过' : '失败', stepError,
+    assertions: [], errors: monitorSnapshot.errors, totalApiCalls: monitorSnapshot.totalApiCalls,
+    screenshotBefore: shotPrefix + '-before.png', screenshotAfter: shotPrefix + '-after.png',
+    elapsed, timestamp: new Date().toISOString(),
+  };
+  console.log(`     ${stepOk ? '✅' : '❌'} ${result.result} (${(elapsed / 1000).toFixed(1)}s)`);
+  return result;
 }
 function loadScenario(filePath) {
   const raw = fs.readFileSync(filePath, 'utf-8');
@@ -538,29 +661,52 @@ async function main() {
   }
   console.log(`📂 场景文件: ${selectedFiles.join(', ')}`);
 
-  // 4. 加载场景
-  let allScenarios = [];
-  let mergedConfig = { ...DEFAULT_CONFIG };
-  for (const sf of selectedFiles) {
-    const loaded = loadScenario(path.join(__dirname, 'scenarios', sf));
-    if (!loaded) continue;
-    mergedConfig = { ...mergedConfig, ...loaded.config };
-    allScenarios = allScenarios.concat(loaded.scenarios);
-  }
-  if (allScenarios.length === 0) { console.log('没有可用的巡检场景'); process.exit(0); }
+  // 4. 自动检测 YAML 格式
+  const formats = selectedFiles.map(f => detectYamlFormat(path.join(__dirname, 'scenarios', f)));
+  const hasTaskFormat = formats.includes('task');
+  const hasScenarioFormat = formats.includes('scenario');
+  const yamlFormat = hasTaskFormat ? 'task' : 'scenario';
+  console.log(`📝 YAML 格式: ${yamlFormat === 'task' ? 'Task (web+tasks+flow)' : 'Scenario (scenarios+steps+assertions)'}`);
 
-  // 5. 过滤场景（优先级/模块）
+  // 5. 加载场景/任务
+  let allScenarios = [];
+  let allTasks = [];
+  let taskWebConfig = {};
+  let mergedConfig = { ...DEFAULT_CONFIG };
+
+  if (yamlFormat === 'task') {
+    for (const sf of selectedFiles) {
+      const loaded = loadTaskYaml(path.join(__dirname, 'scenarios', sf));
+      if (!loaded) continue;
+      taskWebConfig = { ...taskWebConfig, ...loaded.web };
+      allTasks = allTasks.concat(loaded.tasks);
+    }
+    if (allTasks.length === 0) { console.log('没有可用的 YAML 任务'); process.exit(0); }
+    console.log(`✅ 将执行 ${allTasks.length} 个任务`);
+  } else {
+    for (const sf of selectedFiles) {
+      const loaded = loadScenario(path.join(__dirname, 'scenarios', sf));
+      if (!loaded) continue;
+      mergedConfig = { ...mergedConfig, ...loaded.config };
+      allScenarios = allScenarios.concat(loaded.scenarios);
+    }
+    if (allScenarios.length === 0) { console.log('没有可用的巡检场景'); process.exit(0); }
+  }
+
+  // 6. 过滤场景（优先级/模块，仅 Scenario 格式）
   let selected = allScenarios;
-  if (CI_PRIORITY) {
-    selected = selected.filter(s => s.priority.toUpperCase() === CI_PRIORITY.toUpperCase());
-    console.log(`🔍 按优先级 ${CI_PRIORITY} 过滤: ${selected.length} 个场景`);
+  if (yamlFormat === 'scenario') {
+    if (CI_PRIORITY) {
+      selected = selected.filter(s => s.priority.toUpperCase() === CI_PRIORITY.toUpperCase());
+      console.log(`🔍 按优先级 ${CI_PRIORITY} 过滤: ${selected.length} 个场景`);
+    }
+    if (CI_MODULE) {
+      selected = selected.filter(s => s.module.includes(CI_MODULE));
+      console.log(`🔍 按模块 "${CI_MODULE}" 过滤: ${selected.length} 个场景`);
+    }
+    if (selected.length === 0) { console.log('过滤后无可用场景'); process.exit(0); }
+    console.log(`✅ 将执行 ${selected.length} 个场景`);
   }
-  if (CI_MODULE) {
-    selected = selected.filter(s => s.module.includes(CI_MODULE));
-    console.log(`🔍 按模块 "${CI_MODULE}" 过滤: ${selected.length} 个场景`);
-  }
-  if (selected.length === 0) { console.log('过滤后无可用场景'); process.exit(0); }
-  console.log(`✅ 将执行 ${selected.length} 个场景`);
 
   // 6. 创建结果目录
   RESULT_BASE = path.join(__dirname, 'results', `CI巡检-${envKey}-${localTS()}`);
@@ -617,24 +763,46 @@ async function main() {
   });
 
   // 11. 串行执行巡检
-  console.log(`\n🚀 开始巡检 (${selected.length} 个场景)\n`);
   const results = [];
   const startTime = Date.now();
 
-  for (let i = 0; i < selected.length; i++) {
-    const scenario = selected[i];
-    try {
-      const result = await executeScenario(page, scenario, agent, mergedConfig, RESULT_BASE, i + 1, selected.length);
-      results.push(result);
-    } catch (e) {
-      console.log(`     ❌ 场景执行异常: ${e.message?.substring(0, 80)}`);
-      results.push({
-        id: i + 1, name: scenario.name, module: scenario.module, priority: scenario.priority,
-        tags: scenario.tags, pageName: 'error', result: '失败',
-        stepError: e.message?.substring(0, 200), assertions: [], errors: [],
-        totalApiCalls: 0, screenshotBefore: '', screenshotAfter: '',
-        elapsed: 0, timestamp: new Date().toISOString(),
-      });
+  if (yamlFormat === 'task') {
+    // Task 格式执行
+    console.log(`\n🚀 开始执行 (${allTasks.length} 个任务)\n`);
+    for (let i = 0; i < allTasks.length; i++) {
+      const task = allTasks[i];
+      try {
+        const result = await executeTaskFlow(page, task, agent, mergedConfig, RESULT_BASE, i + 1, allTasks.length);
+        results.push(result);
+      } catch (e) {
+        console.log(`     ❌ 任务执行异常: ${e.message?.substring(0, 80)}`);
+        results.push({
+          id: i + 1, name: task.name, module: 'YAML任务', priority: 'P1', tags: [],
+          pageName: 'error', result: '失败', stepError: e.message?.substring(0, 200),
+          assertions: [], errors: [], totalApiCalls: 0,
+          screenshotBefore: '', screenshotAfter: '',
+          elapsed: 0, timestamp: new Date().toISOString(),
+        });
+      }
+    }
+  } else {
+    // Scenario 格式执行
+    console.log(`\n🚀 开始巡检 (${selected.length} 个场景)\n`);
+    for (let i = 0; i < selected.length; i++) {
+      const scenario = selected[i];
+      try {
+        const result = await executeScenario(page, scenario, agent, mergedConfig, RESULT_BASE, i + 1, selected.length);
+        results.push(result);
+      } catch (e) {
+        console.log(`     ❌ 场景执行异常: ${e.message?.substring(0, 80)}`);
+        results.push({
+          id: i + 1, name: scenario.name, module: scenario.module, priority: scenario.priority,
+          tags: scenario.tags, pageName: 'error', result: '失败',
+          stepError: e.message?.substring(0, 200), assertions: [], errors: [],
+          totalApiCalls: 0, screenshotBefore: '', screenshotAfter: '',
+          elapsed: 0, timestamp: new Date().toISOString(),
+        });
+      }
     }
   }
 
