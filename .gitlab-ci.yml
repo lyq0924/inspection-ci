@@ -30,12 +30,12 @@ install-dependencies:
       - node_modules/
     expire_in: 1 hour
 
-# 阶段2：运行巡检脚本
+# 阶段2：运行巡检脚本（CI/CD 专用版本）
 run-inspection:
   stage: inspect
   image: node:18
   script:
-    - npm run inspect
+    - npm run inspect:ci
   artifacts:
     paths:
       - results/      # 保存巡检结果
