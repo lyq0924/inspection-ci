@@ -60,8 +60,11 @@ jobs:
       - name: 🔍 执行自动化巡检
         env:
           # Midscene AI 配置
-          MIDSCENE_MODEL: ${{ secrets.MIDSCENE_MODEL }}
-          MIDSCENE_API_KEY: ${{ secrets.MIDSCENE_API_KEY }}
+          MIDSCENE_MODEL_NAME: ${{ secrets.MIDSCENE_MODEL_NAME }}
+          MIDSCENE_MODEL_API_KEY: ${{ secrets.MIDSCENE_MODEL_API_KEY }}
+          MIDSCENE_MODEL_BASE_URL: ${{ secrets.MIDSCENE_MODEL_BASE_URL }}
+          MIDSCENE_MODEL_FAMILY: ${{ secrets.MIDSCENE_MODEL_FAMILY }}
+          MIDSCENE_MODEL_REASONING_ENABLED: 'false'
           # 巡检参数（来自手动输入）
           INSPECTION_ENV: ${{ inputs.environment }}
           SCENARIO_FILES: ${{ inputs.scenario_files }}
