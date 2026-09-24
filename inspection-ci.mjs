@@ -704,52 +704,48 @@ async function main() {
   }
   console.log(`📂 场景文件: ${selectedFiles.join(', ')}`);
 
-  // 4. 自动检测 YAML 格式
-  const formats = selectedFiles.map(f => detectYamlFormat(path.join(__dirname, 'scenarios', f)));
-  const hasTaskFormat = formats.includes('task');
-  const hasScenarioFormat = formats.includes('scenario');
-  const yamlFormat = hasTaskFormat ? 'task' : 'scenario';
-  console.log(`📝 YAML 格式: ${yamlFormat === 'task' ? 'Task (web+tasks+flow)' : 'Scenario (scenarios+steps+assertions)'}`);
+  // 4. 分别加载 Task 和 Scenario 两种格式的文件
+  const fileFormats = selectedFiles.map(f => ({
+    file: f,
+    format: detectYamlFormat(path.join(__dirname, 'scenarios', f)),
+  }));
 
-  // 5. 加载场景/任务
   let allScenarios = [];
   let allTasks = [];
-  let taskWebConfig = {};
   let mergedConfig = { ...DEFAULT_CONFIG };
 
-  if (yamlFormat === 'task') {
-    for (const sf of selectedFiles) {
-      const loaded = loadTaskYaml(path.join(__dirname, 'scenarios', sf));
-      if (!loaded) continue;
-      taskWebConfig = { ...taskWebConfig, ...loaded.web };
-      allTasks = allTasks.concat(loaded.tasks);
+  for (const { file, format } of fileFormats) {
+    if (format === 'task') {
+      const loaded = loadTaskYaml(path.join(__dirname, 'scenarios', file));
+      if (loaded) {
+        allTasks = allTasks.concat(loaded.tasks);
+        console.log(`📝 Task格式: ${file} → ${loaded.tasks.length} 个任务`);
+      }
+    } else if (format === 'scenario') {
+      const loaded = loadScenario(path.join(__dirname, 'scenarios', file));
+      if (loaded) {
+        mergedConfig = { ...mergedConfig, ...loaded.config };
+        allScenarios = allScenarios.concat(loaded.scenarios);
+        console.log(`📝 Scenario格式: ${file} → ${loaded.scenarios.length} 个场景`);
+      }
     }
-    if (allTasks.length === 0) { console.log('没有可用的 YAML 任务'); process.exit(0); }
-    console.log(`✅ 将执行 ${allTasks.length} 个任务`);
-  } else {
-    for (const sf of selectedFiles) {
-      const loaded = loadScenario(path.join(__dirname, 'scenarios', sf));
-      if (!loaded) continue;
-      mergedConfig = { ...mergedConfig, ...loaded.config };
-      allScenarios = allScenarios.concat(loaded.scenarios);
-    }
-    if (allScenarios.length === 0) { console.log('没有可用的巡检场景'); process.exit(0); }
   }
 
-  // 6. 过滤场景（优先级/模块，仅 Scenario 格式）
-  let selected = allScenarios;
-  if (yamlFormat === 'scenario') {
-    if (CI_PRIORITY) {
-      selected = selected.filter(s => s.priority.toUpperCase() === CI_PRIORITY.toUpperCase());
-      console.log(`🔍 按优先级 ${CI_PRIORITY} 过滤: ${selected.length} 个场景`);
-    }
-    if (CI_MODULE) {
-      selected = selected.filter(s => s.module.includes(CI_MODULE));
-      console.log(`🔍 按模块 "${CI_MODULE}" 过滤: ${selected.length} 个场景`);
-    }
-    if (selected.length === 0) { console.log('过滤后无可用场景'); process.exit(0); }
-    console.log(`✅ 将执行 ${selected.length} 个场景`);
+  // 5. 过滤场景（优先级/模块，仅 Scenario 格式）
+  let selectedScenarios = allScenarios;
+  if (CI_PRIORITY) {
+    selectedScenarios = selectedScenarios.filter(s => s.priority.toUpperCase() === CI_PRIORITY.toUpperCase());
+    console.log(`🔍 按优先级 ${CI_PRIORITY} 过滤: ${selectedScenarios.length} 个场景`);
   }
+  if (CI_MODULE) {
+    selectedScenarios = selectedScenarios.filter(s => s.module.includes(CI_MODULE));
+    console.log(`🔍 按模块 "${CI_MODULE}" 过滤: ${selectedScenarios.length} 个场景`);
+  }
+
+  const totalItems = selectedScenarios.length + allTasks.length;
+  if (totalItems === 0) { console.log('没有可用的巡检项'); process.exit(0); }
+  if (selectedScenarios.length > 0) console.log(`✅ 将执行 ${selectedScenarios.length} 个 Scenario 场景`);
+  if (allTasks.length > 0) console.log(`✅ 将执行 ${allTasks.length} 个 Task 任务`);
 
   // 6. 创建结果目录
   RESULT_BASE = path.join(__dirname, 'results', `CI巡检-${envKey}-${localTS()}`);
@@ -822,44 +818,49 @@ async function main() {
     groupDescription: `环境: ${envKey} | 场景文件: ${selectedFiles.join(', ')}`,
   });
 
-  // 11. 串行执行巡检
+  // 11. 串行执行巡检（先 Scenario，后 Task）
   const results = [];
   const startTime = Date.now();
+  let globalIdx = 0;
 
-  if (yamlFormat === 'task') {
-    // Task 格式执行
-    console.log(`\n🚀 开始执行 (${allTasks.length} 个任务)\n`);
-    for (let i = 0; i < allTasks.length; i++) {
-      const task = allTasks[i];
+  // 先执行 Scenario 格式
+  if (selectedScenarios.length > 0) {
+    console.log(`\n🚀 开始 Scenario 巡检 (${selectedScenarios.length} 个场景)\n`);
+    for (let i = 0; i < selectedScenarios.length; i++) {
+      const scenario = selectedScenarios[i];
+      globalIdx++;
       try {
-        const result = await executeTaskFlow(page, task, agent, mergedConfig, RESULT_BASE, i + 1, allTasks.length);
-        results.push(result);
-      } catch (e) {
-        console.log(`     ❌ 任务执行异常: ${e.message?.substring(0, 80)}`);
-        results.push({
-          id: i + 1, name: task.name, module: 'YAML任务', priority: 'P1', tags: [],
-          pageName: 'error', result: '失败', stepError: e.message?.substring(0, 200),
-          assertions: [], errors: [], totalApiCalls: 0,
-          screenshotBefore: '', screenshotAfter: '',
-          elapsed: 0, timestamp: new Date().toISOString(),
-        });
-      }
-    }
-  } else {
-    // Scenario 格式执行
-    console.log(`\n🚀 开始巡检 (${selected.length} 个场景)\n`);
-    for (let i = 0; i < selected.length; i++) {
-      const scenario = selected[i];
-      try {
-        const result = await executeScenario(page, scenario, agent, mergedConfig, RESULT_BASE, i + 1, selected.length);
+        const result = await executeScenario(page, scenario, agent, mergedConfig, RESULT_BASE, globalIdx, totalItems);
         results.push(result);
       } catch (e) {
         console.log(`     ❌ 场景执行异常: ${e.message?.substring(0, 80)}`);
         results.push({
-          id: i + 1, name: scenario.name, module: scenario.module, priority: scenario.priority,
+          id: globalIdx, name: scenario.name, module: scenario.module, priority: scenario.priority,
           tags: scenario.tags, pageName: 'error', result: '失败',
-          stepError: e.message?.substring(0, 200), assertions: [], errors: [],
+          stepError: e.message?.substring(0, 200), aiIntent: '', assertions: [], errors: [],
           totalApiCalls: 0, screenshotBefore: '', screenshotAfter: '',
+          elapsed: 0, timestamp: new Date().toISOString(),
+        });
+      }
+    }
+  }
+
+  // 再执行 Task 格式
+  if (allTasks.length > 0) {
+    console.log(`\n🚀 开始 Task 执行 (${allTasks.length} 个任务)\n`);
+    for (let i = 0; i < allTasks.length; i++) {
+      const task = allTasks[i];
+      globalIdx++;
+      try {
+        const result = await executeTaskFlow(page, task, agent, mergedConfig, RESULT_BASE, globalIdx, totalItems);
+        results.push(result);
+      } catch (e) {
+        console.log(`     ❌ 任务执行异常: ${e.message?.substring(0, 80)}`);
+        results.push({
+          id: globalIdx, name: task.name, module: 'YAML任务', priority: 'P1', tags: [],
+          pageName: 'error', result: '失败', stepError: e.message?.substring(0, 200), aiIntent: '',
+          assertions: [], errors: [], totalApiCalls: 0,
+          screenshotBefore: '', screenshotAfter: '',
           elapsed: 0, timestamp: new Date().toISOString(),
         });
       }
