@@ -745,10 +745,27 @@ async function main() {
     // 再次检查
     const url2 = page.url();
     if (url2.includes('login') || url2.includes('white')) {
-      console.error('❌ 无法自动登录，CI 模式不支持手动登录');
-      console.error('   请先在本地运行一次 inspection.mjs 完成登录，Cookie 会自动保存');
-      await browser.close().catch(() => {});
-      process.exit(1);
+      if (!CI_HEADLESS) {
+        // 非无头模式：等待手动登录
+        console.log('\n⏳ 请在浏览器中手动登录...（超时10分钟）');
+        try {
+          await page.waitForURL(u => !u.href.includes('login') && !u.href.includes('white'), { timeout: 600000 });
+          console.log('✅ 登录成功');
+          // 保存 Cookie
+          if (!fs.existsSync(path.join(__dirname, '.cache'))) fs.mkdirSync(path.join(__dirname, '.cache'), { recursive: true });
+          fs.writeFileSync(COOKIE_FILE, JSON.stringify(await context.cookies(), null, 2));
+          console.log('🍪 Cookie 已保存');
+        } catch {
+          console.log('❌ 登录超时');
+          await browser.close().catch(() => {});
+          process.exit(1);
+        }
+      } else {
+        console.error('❌ 无法自动登录，CI 无头模式不支持手动登录');
+        console.error('   请先用 HEADLESS=false 运行一次完成登录，Cookie 会自动保存');
+        await browser.close().catch(() => {});
+        process.exit(1);
+      }
     }
   }
   console.log('✅ 已登录');
