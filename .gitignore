@@ -8,6 +8,16 @@ archive/
 coverage/
 dist/
 
+# 不相关文件
+ci-cd-practice/
+CI-CD部署指南.md
+check_steps_results.py
+check_test_cases.py
+generate_*.py
+SOC开发计划_标蓝需求文档.md
+V5.3.0-作业计划管理-创建人显示.yaml
+example.yml
+
 # 输出目录：跟踪结构，忽略生成的报告
 output/latest/*
 output/archive/*
