@@ -53,11 +53,13 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 // ==================== 配置 ====================
 let RESULT_BASE = path.join(__dirname, 'results', localTS());
 const DEFAULT_CONFIG = {
-  page_load_wait: 3000,
+  page_load_wait: 1500,
   page_load_timeout: 30000,
-  network_idle_wait: 5000,
+  network_idle_wait: 3000,
   screenshot_quality: 'medium',
   record_network: true,
+  ai_timeout: 45000,
+  ai_max_replan: 5,
 };
 
 // ==================== 环境加载 ====================
@@ -196,28 +198,34 @@ async function executeTaskFlow(page, task, agent, config, resultDir, idx, total)
   const shotPrefix = path.join(resultDir, `${String(idx).padStart(2,'0')}-${sanitizeFileName(task.name)}`);
   await page.screenshot({ path: shotPrefix + '-before.png', fullPage: false }).catch(() => {});
   const monitor = startErrorMonitor(page);
-  let stepOk = true, stepError = '';
+  let stepOk = true, stepError = '', aiIntent = '';
   for (let si = 0; si < task.flow.length; si++) {
     const step = task.flow[si]; if (!step) continue;
+    aiIntent = step.aiTap || step.aiAction || step.aiInput || step.aiAssert || JSON.stringify(step);
     try {
       await executeFlowStep(page, agent, step, si + 1);
       if (step.aiTap || step.aiAction) {
         await page.waitForLoadState('networkidle', { timeout: config.network_idle_wait }).catch(() => {});
       }
     } catch (e) {
-      stepOk = false; stepError = `步骤${si + 1}失败: ${e.message?.substring(0, 120)}`;
+      stepOk = false;
+      const errMsg = e.message?.substring(0, 120) || '未知错误';
+      stepError = `步骤${si + 1}失败: ${errMsg}`;
+      if (errMsg.includes('Replanned')) {
+        stepError += ` [AI尝试寻找"${aiIntent}"但找不到目标元素]`;
+      }
       console.log(`     ❌ ${stepError}`); break;
     }
   }
-  if (stepOk) { await wait(1500); monitor.snapshot(); }
+  if (stepOk) { await wait(800); monitor.snapshot(); }
   const monitorSnapshot = monitor.snapshot(); monitor.stop();
-  await wait(500);
+  await wait(300);
   await page.screenshot({ path: shotPrefix + '-after.png', fullPage: false }).catch(() => {});
   const pageName = await detectPageName(page);
   const elapsed = Date.now() - startTime;
   const result = {
     id: idx, name: task.name, module: 'YAML任务', priority: 'P1', tags: [],
-    pageName, result: stepOk ? '通过' : '失败', stepError,
+    pageName, result: stepOk ? '通过' : '失败', stepError, aiIntent,
     assertions: [], errors: monitorSnapshot.errors, totalApiCalls: monitorSnapshot.totalApiCalls,
     screenshotBefore: shotPrefix + '-before.png', screenshotAfter: shotPrefix + '-after.png',
     elapsed, timestamp: new Date().toISOString(),
@@ -286,7 +294,7 @@ function startErrorMonitor(page) {
 // ==================== 页面名称检测 ====================
 async function detectPageName(page) {
   try {
-    await page.waitForTimeout(600);
+    await page.waitForTimeout(200);
     return await page.evaluate(() => {
       const isValid = (t) => {
         if (!t || t.length < 2 || t.length > 80) return false;
@@ -350,7 +358,11 @@ function parseAssertions(assertionList) {
 
 async function evaluateAssertions(parsedAssertions, monitorSnapshot, agent, page) {
   const results = [];
-  for (const a of parsedAssertions) {
+  // 合并 UI 断言为一次 AI 调用，减少耗时
+  const uiAssertions = parsedAssertions.filter(a => a.type === 'ui_ok');
+  const otherAssertions = parsedAssertions.filter(a => a.type !== 'ui_ok');
+
+  for (const a of otherAssertions) {
     switch (a.type) {
       case 'page_ok': {
         const pageErrors = monitorSnapshot.errors.filter(e => e.type === 'PAGE');
@@ -367,15 +379,6 @@ async function evaluateAssertions(parsedAssertions, monitorSnapshot, agent, page
         results.push({ label: a.label, pass: consoleErrors.length === 0, detail: consoleErrors.length > 0 ? `${consoleErrors.length}个控制台错误` : '' });
         break;
       }
-      case 'ui_ok': {
-        try {
-          await agent.aiAssert('页面渲染正常，没有白屏、报错弹窗、布局错乱', '页面UI检查');
-          results.push({ label: a.label, pass: true, detail: '' });
-        } catch (e) {
-          results.push({ label: a.label, pass: false, detail: e.message?.substring(0, 100) || 'UI异常' });
-        }
-        break;
-      }
       case 'custom': {
         try {
           await agent.aiAssert(a.text, a.label);
@@ -387,6 +390,21 @@ async function evaluateAssertions(parsedAssertions, monitorSnapshot, agent, page
       }
     }
   }
+
+  // 批量执行 UI 断言（一次 AI 调用检查多个方面）
+  if (uiAssertions.length > 0) {
+    try {
+      await agent.aiAssert('页面渲染正常，没有白屏、报错弹窗、布局错乱', '页面UI检查');
+      for (const a of uiAssertions) {
+        results.push({ label: a.label, pass: true, detail: '' });
+      }
+    } catch (e) {
+      for (const a of uiAssertions) {
+        results.push({ label: a.label, pass: false, detail: e.message?.substring(0, 100) || 'UI异常' });
+      }
+    }
+  }
+
   return results;
 }
 
@@ -402,8 +420,10 @@ async function executeScenario(page, scenario, agent, config, resultDir, idx, to
 
   let stepOk = true;
   let stepError = '';
+  let aiIntent = '';
   for (let si = 0; si < scenario.steps.length; si++) {
     const step = scenario.steps[si];
+    aiIntent = step;
     try {
       console.log(`     步骤${si + 1}: ${step.substring(0, 50)}${step.length > 50 ? '...' : ''}`);
       await agent.aiAct(step);
@@ -411,25 +431,30 @@ async function executeScenario(page, scenario, agent, config, resultDir, idx, to
         await page.waitForLoadState('networkidle', { timeout: config.network_idle_wait }).catch(() => {});
         await wait(config.page_load_wait);
       } else {
-        await wait(1500);
+        await wait(800);
       }
     } catch (e) {
       stepOk = false;
-      stepError = `步骤${si + 1}失败: ${e.message?.substring(0, 80)}`;
+      const errMsg = e.message?.substring(0, 120) || '未知错误';
+      stepError = `步骤${si + 1}失败: ${errMsg}`;
+      // 增强错误信息：记录AI意图
+      if (errMsg.includes('Replanned')) {
+        stepError += ` [AI尝试寻找"${step}"但找不到目标元素]`;
+      }
       console.log(`     ❌ ${stepError}`);
       break;
     }
   }
 
   if (stepOk) {
-    await wait(1500);
+    await wait(1000);
     monitor.snapshot();
   }
 
   const monitorSnapshot = monitor.snapshot();
   monitor.stop();
 
-  await wait(500);
+  await wait(300);
   await page.screenshot({ path: shotPrefix + '-after.png', fullPage: false }).catch(() => {});
 
   const pageName = await detectPageName(page);
@@ -447,6 +472,7 @@ async function executeScenario(page, scenario, agent, config, resultDir, idx, to
     pageName,
     result: allPass ? '通过' : '失败',
     stepError,
+    aiIntent,
     assertions: assertionResults,
     errors: monitorSnapshot.errors,
     totalApiCalls: monitorSnapshot.totalApiCalls,
@@ -551,6 +577,22 @@ async function generateHtmlReport(results, envName, scenarioFiles) {
     </tr>`;
   }).join('\n');
 
+  // 失败详情（增强版：包含AI意图）
+  const failDetails = results.filter(r => r.result === '失败').map(r => {
+    const intentInfo = r.aiIntent ? `<p style="margin:5px 0;font-size:13px;color:#666;"><b>AI意图：</b>尝试执行 "${r.aiIntent}"</p>` : '';
+    const hint = r.stepError?.includes('找不到目标元素')
+      ? '<p style="margin:5px 0;font-size:12px;color:#E65100;">💡 提示：菜单项可能已下线或名称变更，请检查 YAML 中的菜单名称是否与当前 UI 一致</p>'
+      : '';
+    return `<div style="margin:20px 0;padding:15px;background:#fff5f5;border-radius:8px;border-left:4px solid #C62828;">
+        <h3 style="margin-top:0;color:#C62828;">${r.module} &gt; ${r.name}</h3>
+        <p style="margin:5px 0;font-size:13px;color:#C62828;"><b>错误：</b>${r.stepError || '断言失败'}</p>
+        ${intentInfo}
+        ${hint}
+        <div style="display:inline-block;margin-right:15px;"><p style="margin:5px 0;font-size:12px;color:#666;">执行前</p><a href="${path.basename(r.screenshotBefore)}" target="_blank"><img src="${path.basename(r.screenshotBefore)}" style="max-width:480px;border:1px solid #ddd;border-radius:4px;"></a></div>
+        <div style="display:inline-block;"><p style="margin:5px 0;font-size:12px;color:#666;">执行后</p><a href="${path.basename(r.screenshotAfter)}" target="_blank"><img src="${path.basename(r.screenshotAfter)}" style="max-width:480px;border:1px solid #ddd;border-radius:4px;"></a></div>
+      </div>`;
+  }).join('\n');
+
   const moduleRows = Object.entries(moduleStats).map(([mod, s]) =>
     `<tr><td>${mod}</td><td>${s.total}</td><td>${s.pass}</td><td>${s.fail}</td>
      <td>${((s.pass/s.total)*100).toFixed(0)}%</td></tr>`
@@ -586,6 +628,7 @@ async function generateHtmlReport(results, envName, scenarioFiles) {
   <table><tr><th>模块</th><th>总数</th><th>通过</th><th>失败</th><th>通过率</th></tr>${moduleRows}</table>
   <h2>巡检明细</h2>
   <table><tr><th>#</th><th>模块</th><th>场景</th><th>优先级</th><th>页面</th><th>结果</th><th>API</th><th>耗时</th><th>异常</th></tr>${rows}</table>
+  ${failDetails ? `<h2>❌ 失败场景详情</h2>${failDetails}` : ''}
 </div></body></html>`;
 
   const htmlPath = path.join(RESULT_BASE, `巡检报告-${localTS()}.html`);

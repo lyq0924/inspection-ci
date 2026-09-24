@@ -1227,15 +1227,16 @@ scenarios:
       - "等待页面加载完成"
     assertions: [页面正常, 接口正常, 控制台正常]
 
-  - name: "清扫日志"
-    module: "系统设置-日志"
-    enabled: true
-    priority: P3
-    tags: [系统, 日志]
-    steps:
-      - "点击'清扫日志'"
-      - "等待页面加载完成"
-    assertions: [页面正常, 接口正常, 控制台正常]
+  # 注意：清扫日志菜单已下线，从实际UI中移除
+  # - name: "清扫日志"
+  #   module: "系统设置-日志"
+  #   enabled: false
+  #   priority: P3
+  #   tags: [系统, 日志]
+  #   steps:
+  #     - "点击'清扫日志'"
+  #     - "等待页面加载完成"
+  #   assertions: [页面正常, 接口正常, 控制台正常]
 
   - name: "短信日志"
     module: "系统设置-日志"
@@ -1328,12 +1329,13 @@ scenarios:
       - "等待页面加载完成"
     assertions: [页面正常, 接口正常, 控制台正常]
 
-  - name: "Oauth管理"
-    module: "系统设置"
-    enabled: true
-    priority: P3
-    tags: [系统]
-    steps:
-      - "点击'Oauth管理'"
-      - "等待页面加载完成"
-    assertions: [页面正常, 接口正常, 控制台正常]
+  # 注意：Oauth管理菜单已下线，从实际UI中移除
+  # - name: "Oauth管理"
+  #   module: "系统设置"
+  #   enabled: false
+  #   priority: P3
+  #   tags: [系统]
+  #   steps:
+  #     - "点击'Oauth管理'"
+  #     - "等待页面加载完成"
+  #   assertions: [页面正常, 接口正常, 控制台正常]
